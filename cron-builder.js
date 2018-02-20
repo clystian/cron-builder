@@ -1,12 +1,12 @@
-var DEFAULT_INTERVAL = ['*'];
+const DEFAULT_INTERVAL = ['*'];
 
-var CronValidator = (function() {
+const CronValidator = (function() {
     /**
      * Contains the position-to-name mapping of the cron expression
      * @type {Object}
      * @const
      */
-    var MeasureOfTimeMap = {
+    const MeasureOfTimeMap = {
             0: 'minute',
             1: 'hour',
             2: 'dayOfTheMonth',
@@ -33,7 +33,7 @@ var CronValidator = (function() {
      * }} expression - rich object containing the state of the cron expression
      * @throws {Error} if expression contains more than 5 keys
      */
-    var validateExpression = function(expression) {
+    validateExpression = function(expression) {
         // don't care if it's less than 5, we'll just set those to the default '*'
         if (Object.keys(expression).length > 5) {
             throw new Error('Invalid cron expression; limited to 5 values.');
@@ -79,28 +79,24 @@ var CronValidator = (function() {
                 dayOfTheWeek:  {min: 0, max: 7}
             },
             range,
-            validChars = /^[0-9*-]/;
+            validChars = /[^0-9\*,\s]/g;
 
         if (!validatorObj[measureOfTime]) {
             throw new Error('Invalid measureOfTime; Valid options are: ' + MeasureOfTimeValues.join(', '));
         }
 
         if (!validChars.test(value)) {
-            throw new Error('Invalid value; Only numbers 0-9, "-", and "*" chars are allowed');
+            throw new Error('Invalid value; Only numbers 0-9, and "*" chars are allowed');
         }
 
         if (value !== '*') {
             // check to see if value is within range if value is not '*'
-            if (value.indexOf('-') >= 0) {
-                // value is a range and must be split into high and low
-                range = value.split('-');
-                if (!range[0] || range[0] < validatorObj[measureOfTime].min) {
-                    throw new Error('Invalid value; bottom of range is not valid for "' + measureOfTime + '". Limit is ' + validatorObj[measureOfTime].min + '.');
-                }
-
-                if (!range[1] || range[1] > validatorObj[measureOfTime].max) {
-                    throw new Error('Invalid value; top of range is not valid for "' + measureOfTime + '". Limit is ' + validatorObj[measureOfTime].max + '.');
-                }
+            if (value.indexOf(',') >= 0) {
+                // multiple values. must be split and tested one at a time
+                let splittedValues = value.split(',');
+                splittedValues.forEach((e) => {
+                    this.validateValue(measureOfTime, e)
+                });
             } else {
 
                 if (parseInt(value) < validatorObj[measureOfTime].min) {
@@ -141,11 +137,11 @@ var CronBuilder = (function() {
             // check to see if initial expression is valid
 
             expression = {
-                minute:        splitExpression[0] ? [splitExpression[0]] : DEFAULT_INTERVAL,
-                hour:          splitExpression[1] ? [splitExpression[1]] : DEFAULT_INTERVAL,
-                dayOfTheMonth: splitExpression[2] ? [splitExpression[2]] : DEFAULT_INTERVAL,
-                month:         splitExpression[3] ? [splitExpression[3]] : DEFAULT_INTERVAL,
-                dayOfTheWeek:  splitExpression[4] ? [splitExpression[4]] : DEFAULT_INTERVAL,
+                minute:        splitExpression[0] ? splitExpression[0].split(',') : DEFAULT_INTERVAL,
+                hour:          splitExpression[1] ? splitExpression[1].split(',') : DEFAULT_INTERVAL,
+                dayOfTheMonth: splitExpression[2] ? splitExpression[2].split(',') : DEFAULT_INTERVAL,
+                month:         splitExpression[3] ? splitExpression[3].split(',') : DEFAULT_INTERVAL,
+                dayOfTheWeek:  splitExpression[4] ? splitExpression[4].split(',') : DEFAULT_INTERVAL,
             };
         } else {
             expression = {
@@ -183,9 +179,12 @@ var CronBuilder = (function() {
             if (expression[measureOfTime].length === 1 && expression[measureOfTime][0] === '*') {
                 expression[measureOfTime] = [value];
             } else {
-                if (expression[measureOfTime].indexOf(value) < 0) {
-                    expression[measureOfTime].push(value);
-                }
+                let splittedValues = value.split(',');
+                splittedValues.forEach((e) => {
+                    if (expression[measureOfTime].indexOf(e) < 0) {
+                        expression[measureOfTime].push(value)
+                    }
+                });
             }
         };
 
@@ -284,4 +283,4 @@ var CronBuilder = (function() {
     return CronBuilder;
 }());
 
-module.exports = CronBuilder;
+export default CronBuilder;
