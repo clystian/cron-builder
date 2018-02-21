@@ -33,7 +33,7 @@ const CronValidator = (function() {
      * }} expression - rich object containing the state of the cron expression
      * @throws {Error} if expression contains more than 5 keys
      */
-    validateExpression = function(expression) {
+    let validateExpression = function(expression) {
         // don't care if it's less than 5, we'll just set those to the default '*'
         if (Object.keys(expression).length > 5) {
             throw new Error('Invalid cron expression; limited to 5 values.');
@@ -74,18 +74,18 @@ const CronValidator = (function() {
         var validatorObj = {
                 minute:        {min: 0, max: 59},
                 hour:          {min: 0, max: 23},
-                dayOfTheMonth: {min: 1, max: 31},
+                dayOfTheMonth: {min: 0, max: 30},
                 month:         {min: 1, max: 12},
-                dayOfTheWeek:  {min: 0, max: 7}
+                dayOfTheWeek:  {min: 0, max: 6}
             },
             range,
-            validChars = /[^0-9\*,\s]/g;
+            validChars = /[^0-9\*\,\s]/;
 
         if (!validatorObj[measureOfTime]) {
             throw new Error('Invalid measureOfTime; Valid options are: ' + MeasureOfTimeValues.join(', '));
         }
 
-        if (!validChars.test(value)) {
+        if (validChars.test(value)) {
             throw new Error('Invalid value; Only numbers 0-9, and "*" chars are allowed');
         }
 
@@ -238,12 +238,15 @@ var CronBuilder = (function() {
             if (!Array.isArray(value)) {
                 throw new Error('Invalid value; Value must be in the form of an Array.');
             }
-
-            for(var i = 0; i < value.length; i++) {
+            else if (Array.isArray(value) && value.length == 0) {
+              expression[measureOfTime] = [DEFAULT_INTERVAL];
+            } else {
+              for(var i = 0; i < value.length; i++) {
                 CronValidator.validateValue(measureOfTime, value[i]);
-            }
+              }
 
-            expression[measureOfTime] = value;
+              expression[measureOfTime] = value;
+            }
 
             return expression[measureOfTime].join(',');
         };
@@ -274,9 +277,15 @@ var CronBuilder = (function() {
          * @throws {Error} as usual
          */
         this.setAll = function (expToSet) {
-            CronValidator.validateExpression(expToSet);
-
-            expression = expToSet;
+            const {hour, minute, month, dayOfTheMonth, dayOfTheWeek} = expToSet;
+            let testExp = {};
+            Object.keys(expToSet).forEach(e => {
+              testExp[e] = expToSet[e].join(',')
+            });
+            CronValidator.validateExpression(testExp);
+            Object.keys(expToSet).forEach(e => {
+              this.set(e, expToSet[e]);
+            })
         };
     }
 
