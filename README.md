@@ -29,7 +29,7 @@ To instantiate the cron builder:
 var cronExp = new cb();
 
 // optionally, pass in a cron expression to override the default:
-var myCronExp = new cb('5 12 * * 1-5')
+var myCronExp = new cb('5 12 * * 1,5')
 ```
 
 To return the cron expression at any given time:
@@ -84,10 +84,6 @@ npm install
 npm test
 ```
 Pull requests and issues appreciated!
-
-### TODO
-- more validation for things like adding values that are already included in a range, better range validations...
-- sorting of values for a given measure of time
 
 ### License
 
