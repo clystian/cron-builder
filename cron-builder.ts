@@ -33,7 +33,7 @@ class CronValidator {
      * }} expression - rich object containing the state of the cron expression
      * @throws {Error} if expression contains more than 5 keys
      */
-    static validateExpression(expression) {
+    static validateExpression(expression: CronExpresion) {
         // don't care if it's less than 5, we'll just set those to the default '*'
         if (Object.keys(expression).length > 5) {
             throw new Error('Invalid cron expression; limited to 5 values.');
@@ -51,7 +51,7 @@ class CronValidator {
      * @param {!String} expression - an optionally empty string containing at most 5 space delimited expressions.
      * @throws {Error} if the string contains more than 5 space delimited parts.
      */
-    static validateString(expression) {
+    static validateString(expression: string) {
         var splitExpression = expression.split(' ');
 
         if (splitExpression.length > 5) {
@@ -70,7 +70,7 @@ class CronValidator {
      * @throws {Error} if measureOfTime is bogus
      * @throws {Error} if value contains an unsupported character
      */
-    static validateValue(measureOfTime, value) {
+    static validateValue(measureOfTime: string, value: string) {
         var validatorObj = {
             minute: { min: 0, max: 59 },
             hour: { min: 0, max: 23 },
@@ -110,7 +110,7 @@ class CronValidator {
     }
 }
 
-class CronExpresion {
+export class CronExpresion {
     minute: string[] = DEFAULT_INTERVAL;
     hour: string[] = DEFAULT_INTERVAL;
     dayOfTheMonth: string[] = DEFAULT_INTERVAL;
@@ -126,7 +126,7 @@ class CronExpresion {
  */
 class CronBuilder {
     expression: CronExpresion;
-    constructor(initialExpression) {
+    constructor(initialExpression: string) {
         let splitExpression;
 
         if (initialExpression) {
@@ -157,7 +157,7 @@ class CronBuilder {
      * builds a working cron expression based on the state of the cron object
      * @returns {string} - working cron expression
      */
-    build() {
+    build(): string {
         return [
             this.expression.minute.join(','),
             this.expression.hour.join(','),
@@ -173,7 +173,7 @@ class CronBuilder {
      * @param {!Number} value
      * @throws {Error} if measureOfTime or value fail validation
      */
-    addValue(measureOfTime, value) {
+    addValue(measureOfTime: string, value: string) {
         CronValidator.validateValue(measureOfTime, value);
 
         if (this.expression[measureOfTime].length === 1 && this.expression[measureOfTime][0] === '*') {
@@ -194,7 +194,7 @@ class CronBuilder {
      * @param {!String} value - the offensive value
      * @throws {Error} if measureOfTime is bogus.
      */
-    removeValue(measureOfTime, value) {
+    removeValue(measureOfTime: string, value: string) {
         if (!this.expression[measureOfTime]) {
             throw new Error('Invalid measureOfTime: Valid options are: ' + CronValidator.MeasureOfTimeValues.join(', '));
         }
@@ -234,7 +234,7 @@ class CronBuilder {
      * @throws {Error} if your "value" is not an Array&lt;String&gt;
      * @throws {Error} when any item in your value isn't a legal cron-ish descriptor
      */
-    set(measureOfTime, value) {
+    set(measureOfTime: string, value: string) {
         if (!Array.isArray(value)) {
             throw new Error('Invalid value; Value must be in the form of an Array.');
         }
@@ -261,7 +261,7 @@ class CronBuilder {
         dayOfTheWeek: Array.string,
      * }}
      */
-    getAll() {
+    getAll():CronExpresion {
         return this.expression;
     }
 
@@ -276,9 +276,9 @@ class CronBuilder {
      * }} expToSet - the entirety of the cron expression.
      * @throws {Error} as usual
      */
-    setAll(expToSet) {
+    setAll(expToSet: CronExpresion):void {
         const { hour, minute, month, dayOfTheMonth, dayOfTheWeek } = expToSet;
-        let testExp = {};
+        let testExp = new CronExpresion();
         Object.keys(expToSet).forEach(e => {
             testExp[e] = expToSet[e].join(',')
         });
